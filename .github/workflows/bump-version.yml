@@ -1,0 +1,47 @@
+name: Bump Version
+
+on:
+  pull_request:
+    types: [labeled]
+
+jobs:
+  bump:
+    if: |
+      github.event.label.name == 'release:major' ||
+      github.event.label.name == 'release:minor' ||
+      github.event.label.name == 'release:patch'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Bump version
+        run: |
+          if [[ "${{ github.event.label.name }}" == "release:major" ]]; then
+            npm version major -m "release: %s"
+          elif [[ "${{ github.event.label.name }}" == "release:minor" ]]; then
+            npm version minor -m "release: %s"
+          else
+            npm version patch -m "release: %s"
+          fi
+
+      - name: Push version commit
+        run: git push

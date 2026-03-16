@@ -1,0 +1,8 @@
+.github
+demo
+node_modules
+tests
+*.log
+.vscode
+.gitignore
+package-lock.json

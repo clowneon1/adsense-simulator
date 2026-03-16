@@ -1,0 +1,45 @@
+{
+  "name": "@codepenguin/adsense-simulator",
+  "version": "1.0.1",
+  "description": "A lightweight development simulator for Google AdSense that mimics ad slot behavior locally.",
+  "type": "module",
+  "main": "dist/adsense-simulator.js",
+  "module": "dist/adsense-simulator.js",
+  "unpkg": "dist/adsense-simulator.min.js",
+  "jsdelivr": "dist/adsense-simulator.min.js",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "npm run clean && npm run build:esm && npm run build:browser && npm run build:dev",
+    "build:esm": "esbuild src/index.js --bundle --format=esm --minify --outfile=dist/adsense-simulator.js",
+    "build:browser": "esbuild src/index.js --bundle --format=iife --global-name=AdsenseSimulator --minify --outfile=dist/adsense-simulator.min.js",
+    "build:dev": "esbuild src/index.js --bundle --format=iife --global-name=AdsenseSimulator --outfile=dist/adsense-simulator.dev.js",
+    "clean": "rm -rf dist",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "adsense",
+    "adsense-simulator",
+    "ads",
+    "advertising",
+    "testing",
+    "frontend",
+    "debugging"
+  ],
+  "author": "clowneon1",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/clowneon1/adsense-simulator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/clowneon1/adsense-simulator/issues"
+  },
+  "homepage": "https://github.com/clowneon1/adsense-simulator#readme",
+  "devDependencies": {
+    "esbuild": "^0.21.5"
+  }
+}
