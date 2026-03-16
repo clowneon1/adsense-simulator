@@ -172,14 +172,6 @@ Repository:
 https://github.com/clowneon1/adsense-simulator
 ```
 
----
-
-# Author
-
-**clowneon1**
-
----
-
 # License
 
 MIT
