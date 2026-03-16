@@ -6,37 +6,36 @@ function getExplicitSize(slot) {
   const width = parseInt(slot.style.width);
   const height = parseInt(slot.style.height);
 
-  if (width && height) {
+  if (!isNaN(width) && !isNaN(height)) {
     return { width, height };
   }
 
   return null;
 }
 
-export function renderAd(slot, config) {
+export function renderAd(slot, cfg) {
+  if (slot.dataset.simulatorRendered === "true") {
+    return;
+  }
+
+  slot.dataset.simulatorRendered = "true";
+
+  const config = parseAdConfig(slot, cfg);
   const explicit = getExplicitSize(slot);
 
-  let width;
-  let height;
+  let width = 300;
+  let height = 250;
 
   if (explicit) {
     width = explicit.width;
     height = explicit.height;
-  } else if (config.format === "auto") {
+  } else {
     const containerWidth = slot.parentElement.offsetWidth;
-
-    const config = parseAdConfig(slot);
 
     const size = chooseAdSize(containerWidth, config);
 
-    const width = size.width;
-    const height = size.height;
-
-    slot.style.width = width + "px";
-    slot.style.height = height + "px";
-  } else {
-    width = 300;
-    height = 250;
+    width = size.width;
+    height = size.height;
   }
 
   slot.style.display = "flex";
@@ -69,7 +68,7 @@ export function renderAd(slot, config) {
     </div>
   `;
 
-  slot.addEventListener("click", () => {
+  slot.onclick = () => {
     const adData = {
       slot: config.slot,
       client: config.client,
@@ -79,13 +78,10 @@ export function renderAd(slot, config) {
       page: window.location.pathname,
       timestamp: new Date().toLocaleString(),
     };
-
     const html = renderAdClick(adData);
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
 
-    const win = window.open("", "_blank");
-
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
-  });
+    window.open(url, "_blank");
+  };
 }

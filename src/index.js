@@ -1,17 +1,13 @@
 import { initQueue } from "./runtime/queue.js";
-import { initDomObserver } from "./observer/domObserver.js";
 import { scanSlots } from "./runtime/slotScanner.js";
+import { startDomObserver } from "./observer/domObserver.js";
 
-(function startSimulator() {
-  if (typeof window === "undefined") return;
-
-  console.log("adsense-simulator initialized");
-
+function init() {
   initQueue();
-  initDomObserver();
 
-  // initial scan
-  setTimeout(() => {
-    scanSlots();
-  }, 0);
-})();
+  scanSlots();
+
+  startDomObserver();
+}
+
+init();

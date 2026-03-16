@@ -70,18 +70,6 @@
         justify-content: center;
       }
 
-      .ad-card {
-        background: white;
-        padding: 10px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-      }
-
-      .feed {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 20px;
-      }
-
       .article {
         max-width: 720px;
         margin: auto;
@@ -92,11 +80,12 @@
   <body>
     <header>
       <h1>AdSense Simulator Demo</h1>
-      <p>Testing various ad placements and formats</p>
+      <p>Testing all supported ad formats</p>
     </header>
 
     <div class="container">
       <!-- Leaderboard -->
+
       <div class="section demo-box">
         <h2>Leaderboard (728x90)</h2>
 
@@ -110,6 +99,7 @@
       </div>
 
       <!-- Billboard -->
+
       <div class="section demo-box">
         <h2>Billboard (970x250)</h2>
 
@@ -122,7 +112,8 @@
         </ins>
       </div>
 
-      <!-- Sidebar Layout -->
+      <!-- Sidebar layout -->
+
       <div class="section demo-box">
         <h2>Sidebar Layout</h2>
 
@@ -138,7 +129,7 @@
           </div>
 
           <div class="content">
-            <p>Lorem ipsum dolor sit amet consectetur adipiscing elit.</p>
+            <p>Example article content beside a skyscraper ad.</p>
 
             <ins
               class="adsbygoogle"
@@ -148,14 +139,15 @@
             >
             </ins>
 
-            <p>More article content below the ad.</p>
+            <p>More article text below.</p>
           </div>
         </div>
       </div>
 
-      <!-- Half Page -->
+      <!-- Half page -->
+
       <div class="section demo-box">
-        <h2>Half Page Ad (300x600)</h2>
+        <h2>Half Page (300x600)</h2>
 
         <ins
           class="adsbygoogle"
@@ -166,7 +158,8 @@
         </ins>
       </div>
 
-      <!-- Grid Ads -->
+      <!-- Grid ads -->
+
       <div class="section demo-box">
         <h2>Grid Ads</h2>
 
@@ -194,7 +187,8 @@
         </div>
       </div>
 
-      <!-- Responsive Auto -->
+      <!-- Responsive auto -->
+
       <div class="section demo-box">
         <h2>Responsive Auto Ad</h2>
 
@@ -210,7 +204,8 @@
         </div>
       </div>
 
-      <!-- Full Width Responsive -->
+      <!-- Full width responsive -->
+
       <div class="section demo-box">
         <h2>Full Width Responsive Ad</h2>
 
@@ -225,9 +220,10 @@
         </ins>
       </div>
 
-      <!-- In Article -->
+      <!-- In article -->
+
       <div class="section demo-box">
-        <h2>In-Article Ad</h2>
+        <h2>In Article Ad</h2>
 
         <div class="article">
           <p>Lorem ipsum dolor sit amet consectetur adipiscing elit.</p>
@@ -241,18 +237,19 @@
           >
           </ins>
 
-          <p>More article text below the advertisement.</p>
+          <p>More article content continues here.</p>
         </div>
       </div>
 
-      <!-- In Feed -->
+      <!-- In feed -->
+
       <div class="section demo-box">
-        <h2>In-Feed Ads</h2>
+        <h2>In Feed Ads</h2>
 
         <div class="feed">
           <div class="card">Content Card</div>
 
-          <div class="card ad-card">
+          <div class="card">
             <ins
               class="adsbygoogle"
               style="display: block; width: 100%"
@@ -269,9 +266,10 @@
         </div>
       </div>
 
-      <!-- Small container fallback -->
+      <!-- Small container -->
+
       <div class="section demo-box">
-        <h2>Small Container (Mobile Simulation)</h2>
+        <h2>Small Mobile Container</h2>
 
         <div style="width: 260px">
           <ins
@@ -285,17 +283,27 @@
         </div>
       </div>
 
-      <!-- Dynamic SPA -->
-      <div class="section demo-box">
-        <h2>Dynamic Ad Injection (SPA / React)</h2>
+      <!-- Dynamic insertion -->
 
-        <button onclick="insertAd()">Insert Ad Dynamically</button>
+      <div class="section demo-box">
+        <h2>Dynamic Ad Injection (SPA Simulation)</h2>
+
+        <button onclick="insertAd()">Insert Dynamic Ad</button>
 
         <div id="dynamic-slot" style="margin-top: 20px"></div>
       </div>
+
+      <!-- Delayed ads -->
+
+      <div class="section demo-box">
+        <h2>Delayed Ads (Simulates Lazy Loading)</h2>
+
+        <div id="lazy-ad"></div>
+      </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@codepenguin/adsense-simulator@latest/dist/adsense-simulator.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@codepenguin/adsense-simulator"></script>
+    <!-- <script src="dist\adsense-simulator.min.js"></script> -->
 
     <script>
       (adsbygoogle = window.adsbygoogle || []).push({});
@@ -304,6 +312,7 @@
         const ad = document.createElement("ins");
 
         ad.className = "adsbygoogle";
+
         ad.style.display = "block";
         ad.style.width = "300px";
         ad.style.height = "250px";
@@ -315,6 +324,21 @@
 
         adsbygoogle.push({});
       }
+
+      setTimeout(() => {
+        const ad = document.createElement("ins");
+
+        ad.className = "adsbygoogle";
+        ad.style.display = "block";
+
+        ad.setAttribute("data-ad-client", "ca-pub-demo");
+        ad.setAttribute("data-ad-slot", "900002");
+        ad.setAttribute("data-ad-format", "auto");
+
+        document.getElementById("lazy-ad").appendChild(ad);
+
+        adsbygoogle.push({});
+      }, 3000);
     </script>
   </body>
 </html>
