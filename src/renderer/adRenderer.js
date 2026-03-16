@@ -1,5 +1,7 @@
-import { chooseAdSize } from "../engine/responsiveEngine.js";
+import { chooseAdSize } from "../engine/adSizeEngine.js";
 import { renderAdClick } from "../utils/renderAdClick.js";
+import { parseAdConfig } from "../utils/parseAdConfig.js";
+
 function getExplicitSize(slot) {
   const width = parseInt(slot.style.width);
   const height = parseInt(slot.style.height);
@@ -21,11 +23,17 @@ export function renderAd(slot, config) {
     width = explicit.width;
     height = explicit.height;
   } else if (config.format === "auto") {
-    const containerWidth = slot.parentElement.offsetWidth || 600;
-    const size = chooseAdSize(containerWidth);
+    const containerWidth = slot.parentElement.offsetWidth;
 
-    width = size.width;
-    height = size.height;
+    const config = parseAdConfig(slot);
+
+    const size = chooseAdSize(containerWidth, config);
+
+    const width = size.width;
+    const height = size.height;
+
+    slot.style.width = width + "px";
+    slot.style.height = height + "px";
   } else {
     width = 300;
     height = 250;
