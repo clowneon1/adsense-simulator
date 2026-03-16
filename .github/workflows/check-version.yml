@@ -1,0 +1,47 @@
+name: Check Version Bump
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch main branch
+        run: git fetch origin main
+
+      - name: Get PR labels
+        id: labels
+        run: |
+          echo "labels=${{ join(github.event.pull_request.labels.*.name, ',') }}" >> $GITHUB_OUTPUT || true
+
+      - name: Check version bump
+        run: |
+          LABELS="${{ steps.labels.outputs.labels }}"
+          echo "Labels: $LABELS"
+
+          # Skip version check for workflow changes
+          if [[ "$LABELS" == *"release:workflow"* ]]; then
+            echo "Workflow change — skipping version check"
+            exit 0
+          fi
+
+          BASE_VERSION=$(git show origin/main:package.json | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version")
+          PR_VERSION=$(node -p "require('./package.json').version")
+
+          echo "Base version: $BASE_VERSION"
+          echo "PR version: $PR_VERSION"
+
+          if [ "$BASE_VERSION" = "$PR_VERSION" ]; then
+            echo "❌ Version must be bumped"
+            exit 1
+          fi
+
+          echo "✅ Version bump detected"

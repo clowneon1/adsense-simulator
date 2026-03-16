@@ -1,0 +1,33 @@
+name: Test npm Auth
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  test-auth:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Configure npm auth
+        run: npm config set //registry.npmjs.org/:_authToken=${NPM_TOKEN}
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Verify npm authentication
+        run: npm whoami
+
+      - name: Verify registry
+        run: npm config get registry
+
+      - name: Install dependencies
+        run: npm ci

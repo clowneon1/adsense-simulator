@@ -1,0 +1,92 @@
+name: Release Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - release-workflow
+
+concurrency:
+  group: npm-release
+  cancel-in-progress: false
+
+jobs:
+
+  dry-run:
+    name: Dry Run Publish
+    runs-on: ubuntu-latest
+    if: github.ref != 'refs/tags/release-workflow'
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure npm auth
+        run: npm config set //registry.npmjs.org/:_authToken=${NPM_TOKEN}
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Verify npm auth
+        run: npm whoami
+
+      - name: Preview publish
+        run: npm publish --dry-run
+
+
+  publish:
+    name: Approve → Publish to npm
+    needs: dry-run
+    runs-on: ubuntu-latest
+    if: github.ref != 'refs/tags/release-workflow' && startsWith(github.ref, 'refs/heads/main')
+
+    environment:
+      name: npm-publish
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure npm auth
+        run: npm config set //registry.npmjs.org/:_authToken=${NPM_TOKEN}
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish package
+        run: npm publish --access public
+
+      - name: Get package version
+        id: version
+        run: |
+          echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          body: |
+            ## Installation
+
+            ```bash
+            npm i @codepenguin/fma-scraper
+            ```

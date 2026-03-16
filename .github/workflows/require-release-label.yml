@@ -1,0 +1,25 @@
+name: Require Release Label
+
+on:
+  pull_request:
+    types: [opened, edited, labeled, unlabeled, synchronize]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check PR labels
+        run: |
+          LABELS="${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+
+          if [[ "$LABELS" == *"release:major"* ]] || \
+             [[ "$LABELS" == *"release:minor"* ]] || \
+             [[ "$LABELS" == *"release:patch"* ]] || \
+             [[ "$LABELS" == *"release:workflow"* ]]; then
+            echo "Valid release label detected"
+          else
+            echo "❌ PR must include one of the following labels:"
+            echo "release:major, release:minor, release:patch, release:workflow"
+            exit 1
+          fi
