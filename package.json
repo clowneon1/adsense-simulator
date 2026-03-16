@@ -1,6 +1,6 @@
 {
   "name": "@codepenguin/adsense-simulator",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "A lightweight development simulator for Google AdSense that mimics ad slot behavior locally.",
   "type": "module",
   "main": "dist/adsense-simulator.js",
