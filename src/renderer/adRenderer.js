@@ -1,34 +1,41 @@
-import { chooseAdSize } from "../engine/responsiveEngine.js";
+import { chooseAdSize } from "../engine/adSizeEngine.js";
 import { renderAdClick } from "../utils/renderAdClick.js";
+import { parseAdConfig } from "../utils/parseAdConfig.js";
+
 function getExplicitSize(slot) {
   const width = parseInt(slot.style.width);
   const height = parseInt(slot.style.height);
 
-  if (width && height) {
+  if (!isNaN(width) && !isNaN(height)) {
     return { width, height };
   }
 
   return null;
 }
 
-export function renderAd(slot, config) {
+export function renderAd(slot, cfg) {
+  if (slot.dataset.simulatorRendered === "true") {
+    return;
+  }
+
+  slot.dataset.simulatorRendered = "true";
+
+  const config = parseAdConfig(slot, cfg);
   const explicit = getExplicitSize(slot);
 
-  let width;
-  let height;
+  let width = 300;
+  let height = 250;
 
   if (explicit) {
     width = explicit.width;
     height = explicit.height;
-  } else if (config.format === "auto") {
-    const containerWidth = slot.parentElement.offsetWidth || 600;
-    const size = chooseAdSize(containerWidth);
+  } else {
+    const containerWidth = slot.parentElement.offsetWidth;
+
+    const size = chooseAdSize(containerWidth, config);
 
     width = size.width;
     height = size.height;
-  } else {
-    width = 300;
-    height = 250;
   }
 
   slot.style.display = "flex";
@@ -61,7 +68,7 @@ export function renderAd(slot, config) {
     </div>
   `;
 
-  slot.addEventListener("click", () => {
+  slot.onclick = () => {
     const adData = {
       slot: config.slot,
       client: config.client,
@@ -71,13 +78,10 @@ export function renderAd(slot, config) {
       page: window.location.pathname,
       timestamp: new Date().toLocaleString(),
     };
-
     const html = renderAdClick(adData);
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
 
-    const win = window.open("", "_blank");
-
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
-  });
+    window.open(url, "_blank");
+  };
 }

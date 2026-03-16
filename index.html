@@ -14,7 +14,7 @@
       header {
         background: #0f172a;
         color: white;
-        padding: 20px;
+        padding: 25px;
         text-align: center;
       }
 
@@ -28,9 +28,22 @@
         margin-bottom: 60px;
       }
 
-      .layout {
+      .demo-box {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+      }
+
+      .row {
         display: flex;
         gap: 20px;
+        flex-wrap: wrap;
+      }
+
+      .layout {
+        display: flex;
+        gap: 30px;
       }
 
       .sidebar {
@@ -41,17 +54,25 @@
         flex: 1;
       }
 
-      .row {
-        display: flex;
+      .feed {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
         gap: 20px;
-        flex-wrap: wrap;
       }
 
-      .demo-box {
-        background: white;
+      .card {
+        background: #f8fafc;
         padding: 20px;
         border-radius: 6px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        min-height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .article {
+        max-width: 720px;
+        margin: auto;
       }
     </style>
   </head>
@@ -59,13 +80,14 @@
   <body>
     <header>
       <h1>AdSense Simulator Demo</h1>
-      <p>Simulating ad placements and runtime behavior</p>
+      <p>Testing all supported ad formats</p>
     </header>
 
     <div class="container">
       <!-- Leaderboard -->
+
       <div class="section demo-box">
-        <h2>Leaderboard Ad</h2>
+        <h2>Leaderboard (728x90)</h2>
 
         <ins
           class="adsbygoogle"
@@ -76,7 +98,22 @@
         </ins>
       </div>
 
+      <!-- Billboard -->
+
+      <div class="section demo-box">
+        <h2>Billboard (970x250)</h2>
+
+        <ins
+          class="adsbygoogle"
+          style="display: block; width: 970px; height: 250px"
+          data-ad-client="ca-pub-demo"
+          data-ad-slot="100002"
+        >
+        </ins>
+      </div>
+
       <!-- Sidebar layout -->
+
       <div class="section demo-box">
         <h2>Sidebar Layout</h2>
 
@@ -92,10 +129,7 @@
           </div>
 
           <div class="content">
-            <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. This
-              simulates real content around ads.
-            </p>
+            <p>Example article content beside a skyscraper ad.</p>
 
             <ins
               class="adsbygoogle"
@@ -105,69 +139,172 @@
             >
             </ins>
 
-            <p>More content below the ad to test layout flow.</p>
+            <p>More article text below.</p>
           </div>
         </div>
       </div>
 
-      <!-- Side by side ads -->
+      <!-- Half page -->
+
       <div class="section demo-box">
-        <h2>Side by Side Ads</h2>
+        <h2>Half Page (300x600)</h2>
+
+        <ins
+          class="adsbygoogle"
+          style="display: block; width: 300px; height: 600px"
+          data-ad-client="ca-pub-demo"
+          data-ad-slot="300001"
+        >
+        </ins>
+      </div>
+
+      <!-- Grid ads -->
+
+      <div class="section demo-box">
+        <h2>Grid Ads</h2>
 
         <div class="row">
           <ins
             class="adsbygoogle"
             style="display: block; width: 300px; height: 250px"
             data-ad-client="ca-pub-demo"
-            data-ad-slot="300001"
-          >
-          </ins>
+            data-ad-slot="400001"
+          ></ins>
 
           <ins
             class="adsbygoogle"
             style="display: block; width: 300px; height: 250px"
             data-ad-client="ca-pub-demo"
-            data-ad-slot="300002"
-          >
-          </ins>
+            data-ad-slot="400002"
+          ></ins>
 
           <ins
             class="adsbygoogle"
             style="display: block; width: 300px; height: 250px"
             data-ad-client="ca-pub-demo"
-            data-ad-slot="300003"
-          >
-          </ins>
+            data-ad-slot="400003"
+          ></ins>
         </div>
       </div>
 
-      <!-- Responsive container -->
-      <div class="section demo-box">
-        <h2>Responsive Container</h2>
+      <!-- Responsive auto -->
 
-        <div style="width: 100%; max-width: 800px">
+      <div class="section demo-box">
+        <h2>Responsive Auto Ad</h2>
+
+        <div style="max-width: 800px">
           <ins
             class="adsbygoogle"
             style="display: block"
             data-ad-client="ca-pub-demo"
-            data-ad-slot="400001"
+            data-ad-slot="500001"
             data-ad-format="auto"
           >
           </ins>
         </div>
       </div>
 
-      <!-- Dynamic ad insertion -->
-      <div class="section demo-box">
-        <h2>Dynamic Ad Injection (Simulates SPA / React)</h2>
+      <!-- Full width responsive -->
 
-        <button onclick="insertAd()">Insert Ad Dynamically</button>
+      <div class="section demo-box">
+        <h2>Full Width Responsive Ad</h2>
+
+        <ins
+          class="adsbygoogle"
+          style="display: block"
+          data-ad-client="ca-pub-demo"
+          data-ad-slot="500002"
+          data-ad-format="auto"
+          data-full-width-responsive="true"
+        >
+        </ins>
+      </div>
+
+      <!-- In article -->
+
+      <div class="section demo-box">
+        <h2>In Article Ad</h2>
+
+        <div class="article">
+          <p>Lorem ipsum dolor sit amet consectetur adipiscing elit.</p>
+
+          <ins
+            class="adsbygoogle"
+            data-ad-layout="in-article"
+            data-ad-format="fluid"
+            data-ad-client="ca-pub-demo"
+            data-ad-slot="600001"
+          >
+          </ins>
+
+          <p>More article content continues here.</p>
+        </div>
+      </div>
+
+      <!-- In feed -->
+
+      <div class="section demo-box">
+        <h2>In Feed Ads</h2>
+
+        <div class="feed">
+          <div class="card">Content Card</div>
+
+          <div class="card">
+            <ins
+              class="adsbygoogle"
+              style="display: block; width: 100%"
+              data-ad-layout="in-feed"
+              data-ad-format="fluid"
+              data-ad-client="ca-pub-demo"
+              data-ad-slot="700001"
+            >
+            </ins>
+          </div>
+
+          <div class="card">Content Card</div>
+          <div class="card">Content Card</div>
+        </div>
+      </div>
+
+      <!-- Small container -->
+
+      <div class="section demo-box">
+        <h2>Small Mobile Container</h2>
+
+        <div style="width: 260px">
+          <ins
+            class="adsbygoogle"
+            style="display: block"
+            data-ad-client="ca-pub-demo"
+            data-ad-slot="800001"
+            data-ad-format="auto"
+          >
+          </ins>
+        </div>
+      </div>
+
+      <!-- Dynamic insertion -->
+
+      <div class="section demo-box">
+        <h2>Dynamic Ad Injection (SPA Simulation)</h2>
+
+        <button onclick="insertAd()">Insert Dynamic Ad</button>
 
         <div id="dynamic-slot" style="margin-top: 20px"></div>
       </div>
+
+      <!-- Delayed ads -->
+
+      <div class="section demo-box">
+        <h2>Delayed Ads (Simulates Lazy Loading)</h2>
+
+        <div id="lazy-ad"></div>
+      </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@codepenguin/adsense-simulator@latest/dist/adsense-simulator.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@codepenguin/adsense-simulator"></script>
+    <!-- <script src="dist\adsense-simulator.min.js"></script> -->
+
     <script>
       (adsbygoogle = window.adsbygoogle || []).push({});
 
@@ -181,12 +318,27 @@
         ad.style.height = "250px";
 
         ad.setAttribute("data-ad-client", "ca-pub-demo");
-        ad.setAttribute("data-ad-slot", "500001");
+        ad.setAttribute("data-ad-slot", "900001");
 
         document.getElementById("dynamic-slot").appendChild(ad);
 
         adsbygoogle.push({});
       }
+
+      setTimeout(() => {
+        const ad = document.createElement("ins");
+
+        ad.className = "adsbygoogle";
+        ad.style.display = "block";
+
+        ad.setAttribute("data-ad-client", "ca-pub-demo");
+        ad.setAttribute("data-ad-slot", "900002");
+        ad.setAttribute("data-ad-format", "auto");
+
+        document.getElementById("lazy-ad").appendChild(ad);
+
+        adsbygoogle.push({});
+      }, 3000);
     </script>
   </body>
 </html>
