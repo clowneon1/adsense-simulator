@@ -21,7 +21,6 @@ export function initQueue() {
     return result;
   };
 
-  // process any pushes that happened before simulator loaded
   scheduleDrain();
 }
 
@@ -36,5 +35,7 @@ function scheduleDrain() {
 function drainQueue() {
   draining = false;
 
-  scanSlots();
+  requestAnimationFrame(() => {
+    scanSlots();
+  });
 }
