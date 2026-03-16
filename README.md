@@ -94,7 +94,7 @@ This helps verify that ad properties are correctly passed during click events.
 You can also use the simulator directly via CDN.
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@codepenguin/adsense-simulator/dist/adsense-simulator.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@codepenguin/adsense-simulator@latest/dist/adsense-simulator.min.js"></script>
 ```
 
 This allows quick testing without installing npm packages.
@@ -184,4 +184,4 @@ https://github.com/clowneon1/adsense-simulator
 
 MIT
 
-If you want, I can also help you add a **nice npm badge + version badge + install badge** at the top of the README so the package page looks more professional on GitHub and npm.
+### ~ clowneon1
