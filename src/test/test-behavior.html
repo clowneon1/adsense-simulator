@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>AdSense Simulator Behaviour Test</title>
+  </head>
+
+  <body>
+    <h1>AdSense Simulator Behaviour Tests</h1>
+
+    <!-- 1️⃣ VALID SLOT -->
+    <h2>Valid Slot (Should Render Immediately)</h2>
+
+    <ins
+      class="adsbygoogle"
+      style="display: block; width: 300px; height: 250px"
+      data-ad-client="ca-pub-demo"
+      data-ad-slot="100001"
+    >
+    </ins>
+
+    <!-- 2️⃣ BROKEN SLOT -->
+    <h2>Broken Slot (Missing slot id)</h2>
+
+    <ins
+      class="adsbygoogle"
+      style="display: block; width: 300px; height: 250px"
+      data-ad-client="ca-pub-demo"
+    >
+    </ins>
+
+    <!-- 3️⃣ ATTRIBUTE ADDED LATER -->
+    <h2>Slot Where Attributes Appear Later</h2>
+
+    <ins id="late-slot" class="adsbygoogle" style="display: block"></ins>
+
+    <!-- 4️⃣ DYNAMIC INSERTION -->
+    <h2>Dynamic Slot Insertion</h2>
+
+    <button onclick="addDynamic()">Add Dynamic Ad</button>
+
+    <div id="dynamic-container"></div>
+
+    <!-- 5️⃣ SPA REPLACEMENT -->
+    <h2>Simulate SPA Navigation</h2>
+
+    <button onclick="replacePage()">Replace DOM</button>
+
+    <div id="spa-area"></div>
+
+    <script src="../../dist//adsense-simulator.min.js"></script>
+
+    <script>
+      (adsbygoogle = window.adsbygoogle || []).push({});
+
+      /* 3️⃣ Add attributes later */
+
+      setTimeout(() => {
+        const slot = document.getElementById("late-slot");
+
+        slot.setAttribute("data-ad-client", "ca-pub-demo");
+        slot.setAttribute("data-ad-slot", "100002");
+
+        adsbygoogle.push({});
+      }, 1000);
+
+      /* 4️⃣ Dynamic insertion */
+
+      function addDynamic() {
+        const ad = document.createElement("ins");
+
+        ad.className = "adsbygoogle";
+        ad.style.display = "block";
+        ad.style.width = "300px";
+        ad.style.height = "250px";
+
+        ad.setAttribute("data-ad-client", "ca-pub-demo");
+        ad.setAttribute("data-ad-slot", "100003");
+
+        document.getElementById("dynamic-container").appendChild(ad);
+
+        adsbygoogle.push({});
+      }
+
+      /* 5️⃣ Simulate SPA page replacement */
+
+      function replacePage() {
+        const area = document.getElementById("spa-area");
+
+        area.innerHTML = `
+<h3>New Page Content</h3>
+
+<ins
+class="adsbygoogle"
+style="display:block;width:300px;height:250px"
+data-ad-client="ca-pub-demo"
+data-ad-slot="100004">
+</ins>
+`;
+
+        adsbygoogle.push({});
+      }
+    </script>
+  </body>
+</html>
