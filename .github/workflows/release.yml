@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-    tags:
-      - release-workflow
 
 concurrency:
   group: npm-release
@@ -16,7 +14,6 @@ jobs:
   dry-run:
     name: Dry Run Publish
     runs-on: ubuntu-latest
-    if: github.ref != 'refs/tags/release-workflow'
 
     steps:
       - name: Checkout repo
@@ -26,27 +23,25 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
+          registry-url: https://registry.npmjs.org/
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Configure npm auth
-        run: npm config set //registry.npmjs.org/:_authToken=${NPM_TOKEN}
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
       - name: Verify npm auth
         run: npm whoami
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Preview publish
         run: npm publish --dry-run
-
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish:
     name: Approve → Publish to npm
     needs: dry-run
     runs-on: ubuntu-latest
-    if: github.ref != 'refs/tags/release-workflow' && startsWith(github.ref, 'refs/heads/main')
 
     environment:
       name: npm-publish
@@ -62,17 +57,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
+          registry-url: https://registry.npmjs.org/
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Configure npm auth
-        run: npm config set //registry.npmjs.org/:_authToken=${NPM_TOKEN}
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Build package
+        run: npm run build
 
       - name: Publish package
         run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Get package version
         id: version
@@ -85,8 +81,78 @@ jobs:
           tag_name: v${{ steps.version.outputs.version }}
           generate_release_notes: true
           body: |
+            # @codepenguin/adsense-simulator
+
+            A lightweight development tool that simulates **Google AdSense runtime behavior** locally.
+
+            This allows developers to test ad placements, layouts, and click flows **without contacting Google servers**.
+
+            ⚠️ Intended for **development only**.  
+            Do not use this simulator in production environments.
+
+            ---
+
             ## Installation
 
             ```bash
-            npm i @codepenguin/fma-scraper
+            npm install @codepenguin/adsense-simulator
             ```
+
+            ---
+
+            ## Usage
+
+            ```javascript
+            import "@codepenguin/adsense-simulator"
+            ```
+
+            Once imported, the simulator automatically detects `.adsbygoogle` slots and renders simulated ads.
+
+            ---
+
+            ## Example Ad Slot
+
+            ```html
+            <ins
+              class="adsbygoogle"
+              style="display:block;width:300px;height:250px"
+              data-ad-client="ca-pub-demo"
+              data-ad-slot="123456">
+            </ins>
+
+            <script>
+            (adsbygoogle = window.adsbygoogle || []).push({});
+            </script>
+            ```
+
+            ---
+
+            ## CDN Usage
+
+            ```html
+            <script src="https://cdn.jsdelivr.net/npm/@codepenguin/adsense-simulator/dist/adsense-simulator.min.js"></script>
+            ```
+
+            ---
+
+            ## Simulated Features
+
+            - `.adsbygoogle` slot detection
+            - `adsbygoogle.push()` queue behavior
+            - responsive ad sizing
+            - container-based rendering
+            - dynamic DOM insertion detection
+            - click simulation
+            - ad metadata inspection
+
+            ---
+
+            ## Repository
+
+            https://github.com/clowneon1/adsense-simulator
+
+            ---
+
+            ## License
+
+            MIT
