@@ -1,34 +1,56 @@
+let observer = null;
+
+function isAdsenseScript(node) {
+  return (
+    node instanceof HTMLScriptElement &&
+    node.src &&
+    node.src.includes("adsbygoogle.js")
+  );
+}
+
 export function blockGoogleAdsScripts() {
-  const isAdsense = (src) => src && src.includes("adsbygoogle.js");
+  if (observer) return;
 
-  const originalAppendChild = Node.prototype.appendChild;
-  const originalInsertBefore = Node.prototype.insertBefore;
-  const originalSetAttribute = Element.prototype.setAttribute;
+  // Block already-present AdSense script tags
+  document.querySelectorAll('script[src*="adsbygoogle.js"]').forEach((el) => {
+    el.remove();
+    console.info("adsense-simulator: removed existing Google AdSense script");
+  });
 
-  Node.prototype.appendChild = function (node) {
-    if (node.tagName === "SCRIPT" && isAdsense(node.src)) {
-      console.info("adsense-simulator: blocked Google AdSense script");
-      return node;
+  // Use MutationObserver to intercept dynamically injected AdSense scripts
+  // This avoids fragile global prototype monkey-patching
+  observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        if (isAdsenseScript(node)) {
+          node.remove();
+          console.info("adsense-simulator: blocked Google AdSense script");
+        }
+
+        // Also check child nodes in case a container was inserted
+        if (node instanceof HTMLElement) {
+          node
+            .querySelectorAll('script[src*="adsbygoogle.js"]')
+            .forEach((child) => {
+              child.remove();
+              console.info("adsense-simulator: blocked Google AdSense script");
+            });
+        }
+      }
     }
+  });
 
-    return originalAppendChild.call(this, node);
-  };
+  const target = document.documentElement || document.body;
 
-  Node.prototype.insertBefore = function (node, ref) {
-    if (node.tagName === "SCRIPT" && isAdsense(node.src)) {
-      console.info("adsense-simulator: blocked Google AdSense script");
-      return node;
-    }
+  observer.observe(target, {
+    childList: true,
+    subtree: true,
+  });
+}
 
-    return originalInsertBefore.call(this, node, ref);
-  };
-
-  Element.prototype.setAttribute = function (name, value) {
-    if (this.tagName === "SCRIPT" && name === "src" && isAdsense(value)) {
-      console.info("adsense-simulator: blocked Google AdSense script");
-      return;
-    }
-
-    return originalSetAttribute.call(this, name, value);
-  };
+export function unblockGoogleAdsScripts() {
+  if (observer) {
+    observer.disconnect();
+    observer = null;
+  }
 }
