@@ -130,8 +130,7 @@ jobs:
             ## CDN Usage
 
             ```html
-            <script src="https://cdn.jsdelivr.net/npm/@codepenguin/adsense-simulator@latest/dist/adsense-simulator.min.js"></script>
-            ```
+            <script src="https://cdn.jsdelivr.net/npm/@codepenguin/adsense-simulator/dist/adsense-simulator.min.js?removeGoogleAds=true"></script>            ```
 
             ---
 
