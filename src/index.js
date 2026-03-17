@@ -36,9 +36,8 @@ function getScriptParams() {
   // Mapping: data-remove-google-ads="true" → params.removeGoogleAds = "true"
   for (const attr of script.attributes) {
     if (attr.name.startsWith("data-")) {
-      // Convert data-foo-bar-baz → fooBarbaz (camelCase)
       const key = attr.name
-        .slice(5) // strip "data-"
+        .slice(5)
         .replace(/-([a-z])/g, (_, c) => c.toUpperCase());
       params[key] = attr.value;
     }
@@ -51,10 +50,24 @@ export function init() {
   const params = getScriptParams();
   logSimulatorStart(params);
 
-  if (params.removeGoogleAds === "true") {
+  // Layer 4 must be installed BEFORE initQueue() creates the array,
+  // so the trap wraps the queue from the very first moment it exists.
+  // Pass the queue reference after initQueue() sets it up.
+  const shouldBlock = params.removeGoogleAds === "true";
+
+  if (shouldBlock) {
+    // Layers 1 + 3 can start immediately before the queue exists
     blockGoogleAdsScripts();
   }
+
   initQueue();
+
+  if (shouldBlock) {
+    // Layer 4: now that initQueue() has created window.adsbygoogle,
+    // install the property trap around it
+    const { installQueueTrap } = await import("./utils/blockGoogleAdsScripts.js");
+    installQueueTrap(window.adsbygoogle);
+  }
 
   startRuntime();
 }
