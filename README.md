@@ -1,49 +1,61 @@
 # @codepenguin/adsense-simulator
 
-A lightweight **development simulator for Google AdSense** that allows developers to test ad placements locally **without contacting Google servers**.
+A lightweight **development tool that simulates Google AdSense behavior locally**.
 
-It mimics core runtime behavior such as `.adsbygoogle` slots, responsive sizing, queue handling, and click flow so you can verify layouts during development.
+This allows developers to test **ad placements, responsive layouts, and integration logic** without loading real Google ads.
 
-> ⚠️ **This library is intended only for development environments.**
-> Do not use it in production. In production, load the official Google AdSense script.
+The simulator reproduces key runtime behaviors of AdSense while running **entirely in the browser with no external network requests**.
+
+⚠️ **Development use only. Do not use in production.**
 
 ---
 
 # Features
 
-- Simulates `.adsbygoogle` ad slots
-- Mimics `adsbygoogle.push()` queue behavior
-- Responsive ad sizing based on container width
-- Container-based ad rendering
-- Dynamic DOM insertion detection
-- Multiple ad placements on the same page
-- Simulated advertiser landing page on click
-- Debug information displayed inside rendered ads
-- Works **completely offline without contacting Google**
+The simulator reproduces important behaviors of Google AdSense:
+
+- `.adsbygoogle` slot detection
+- `adsbygoogle.push()` queue handling
+- responsive ad sizing
+- container-based ad selection
+- dynamic DOM insertion detection
+- SPA navigation support
+- back/forward navigation handling
+- click simulation
+- ad metadata inspection
+- optional blocking of the real AdSense script
 
 ---
 
 # Installation
 
+## npm
+
 ```bash
 npm install @codepenguin/adsense-simulator
 ```
 
----
-
-# Usage
-
-Import the simulator in your project during development.
+Then import it in your development environment:
 
 ```javascript
 import "@codepenguin/adsense-simulator";
 ```
 
-Once imported, the simulator automatically starts and listens for `.adsbygoogle` slots.
+---
+
+## CDN
+
+You can also use the simulator directly in static HTML pages.
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@codepenguin/adsense-simulator/dist/adsense-simulator.min.js"></script>
+```
 
 ---
 
 # Example Ad Slot
+
+Use normal AdSense markup.
 
 ```html
 <ins
@@ -59,121 +71,178 @@ Once imported, the simulator automatically starts and listens for `.adsbygoogle`
 </script>
 ```
 
-The simulator will render a **mock ad container** with useful debug information such as:
+The simulator will render a mock ad displaying useful debug information.
 
-- client ID
-- slot ID
-- chosen ad size
-- container width
-- ad format
+Example:
+
+```
+adsense-simulator
+client: ca-pub-demo
+slot: 123456
+size: 300x250
+format: fixed
+```
+
+---
+
+# Responsive Ads
+
+Responsive slots are supported.
+
+```html
+<ins
+  class="adsbygoogle"
+  style="display:block"
+  data-ad-client="ca-pub-demo"
+  data-ad-slot="123456"
+  data-ad-format="auto"
+>
+</ins>
+```
+
+The simulator chooses an appropriate ad size based on container width.
+
+---
+
+# Dynamic Ads (SPA / React / Astro)
+
+The simulator automatically detects dynamically inserted ads.
+
+```javascript
+const ad = document.createElement("ins");
+
+ad.className = "adsbygoogle";
+ad.style.display = "block";
+ad.style.width = "300px";
+ad.style.height = "250px";
+
+ad.setAttribute("data-ad-client", "ca-pub-demo");
+ad.setAttribute("data-ad-slot", "123456");
+
+document.body.appendChild(ad);
+
+adsbygoogle.push({});
+```
+
+MutationObserver automatically triggers a scan.
 
 ---
 
 # Click Simulation
 
-Clicking a simulated ad opens a **mock advertiser landing page** showing metadata about the clicked ad.
+Clicking a simulated ad opens a mock advertiser page displaying ad metadata.
 
-Example information displayed:
+Example data shown:
 
-```
-slot
-client
-size
-format
-containerWidth
-page
-timestamp
-```
+- client
+- slot
+- ad size
+- format
+- container width
+- page path
+- timestamp
 
-This helps verify that ad properties are correctly passed during click events.
+This helps verify correct ad configuration.
 
 ---
 
-# CDN Usage
+# Blocking Real AdSense Script
 
-You can also use the simulator directly via CDN.
+During development you may want to prevent the real AdSense script from loading.
+
+Use the script parameter:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@codepenguin/adsense-simulator@latest/dist/adsense-simulator.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@codepenguin/adsense-simulator/dist/adsense-simulator.min.js?removeGoogleAds=true"></script>
 ```
 
-This allows quick testing without installing npm packages.
+When enabled, the simulator intercepts attempts to load:
+
+```
+https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js
+```
+
+and prevents it from downloading.
+
+This avoids conflicts between the simulator and real AdSense.
 
 ---
 
-# What the Simulator Emulates
+# Console Output
 
-| Feature                       | Supported |
-| ----------------------------- | --------- |
-| `.adsbygoogle` slot detection | ✅        |
-| `adsbygoogle.push()` queue    | ✅        |
-| Responsive ad sizing          | ✅        |
-| Container-based ad selection  | ✅        |
-| Dynamic DOM insertion         | ✅        |
-| Multiple ad placements        | ✅        |
-| Click simulation              | ✅        |
-| Debug information             | ✅        |
+When the simulator starts you will see:
+
+```
+adsense-simulator: started { removeGoogleAds: "true" }
+```
+
+If the real AdSense script is blocked:
+
+```
+adsense-simulator: blocked Google AdSense script
+```
 
 ---
 
-# What It Does Not Simulate
+# Supported Ad Sizes
 
-The simulator does **not replicate Google’s ad network infrastructure**, including:
+The simulator supports common AdSense sizes including:
 
-- real ad auctions
+- 320×50
+- 468×60
+- 728×90
+- 300×250
+- 336×280
+- 160×600
+- 300×600
+- 970×90
+- 970×250
+
+Responsive ads automatically choose the closest match.
+
+---
+
+# Runtime Behavior
+
+The simulator processes ads using a queue system similar to AdSense:
+
+```
+adsbygoogle.push()
+        ↓
+queue intercept
+        ↓
+slot scanning
+        ↓
+ad rendering
+```
+
+Dynamic content and SPA navigation are handled via MutationObserver.
+
+---
+
+# What This Simulator Does NOT Replicate
+
+This tool does not simulate Google’s ad network infrastructure.
+
+It does **not provide**:
+
+- real ads
 - advertiser targeting
+- auctions
 - revenue tracking
 - fraud detection
-- actual ad creatives
+- AdSense account validation
 
-These systems run on Google servers and cannot be reproduced locally.
-
----
-
-# Development Purpose
-
-This tool is designed to help developers:
-
-- verify ad placements
-- test responsive layouts
-- debug `.adsbygoogle` integration
-- simulate ad click flows
-
-without requiring real ads during development.
+Those systems run exclusively on Google's servers.
 
 ---
-
-# Project Structure
-
-```
-adsense-simulator
-│
-├ src
-├ dist
-│   ├ adsense-simulator.js
-│   ├ adsense-simulator.min.js
-│   └ adsense-simulator.dev.js
-│
-├ README.md
-└ package.json
-```
-
-Only the **`dist` build files** are published to npm.
-
----
-
-# Contributing
-
-Issues and pull requests are welcome.
-
-Repository:
-
-```
-https://github.com/clowneon1/adsense-simulator
-```
 
 # License
 
 MIT
 
-### ~ clowneon1
+---
+
+# Repository
+
+https://github.com/clowneon1/adsense-simulator

@@ -1,26 +1,42 @@
 import { initQueue } from "./runtime/queue.js";
 import { scanSlots } from "./runtime/slotScanner.js";
 import { startDomObserver } from "./observer/domObserver.js";
-
-let runtimeStarted = false;
+import { startUrlWatcher } from "./runtime/urlWatcher.js";
+import { logSimulatorStart } from "./utils/logger.js";
+import { blockGoogleAdsScripts } from "./utils/blockGoogleAdsScripts.js";
 
 function startRuntime() {
-  if (runtimeStarted) return;
-  runtimeStarted = true;
-
   startDomObserver();
+  startUrlWatcher();
   scanSlots();
 }
 
+function getScriptParams() {
+  const script = document.currentScript;
+
+  if (!script) return {};
+
+  const url = new URL(script.src);
+
+  const params = {};
+
+  url.searchParams.forEach((value, key) => {
+    params[key] = value;
+  });
+
+  return params;
+}
+
 export function init() {
-  // Queue must initialize immediately to capture push calls
+  const params = getScriptParams();
+  logSimulatorStart(params);
+
+  if (params.removeGoogleAds === "true") {
+    blockGoogleAdsScripts();
+  }
   initQueue();
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", startRuntime, { once: true });
-  } else {
-    startRuntime();
-  }
+  startRuntime();
 }
 
 init();
