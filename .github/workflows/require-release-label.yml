@@ -15,11 +15,10 @@ jobs:
 
           if [[ "$LABELS" == *"release:major"* ]] || \
              [[ "$LABELS" == *"release:minor"* ]] || \
-             [[ "$LABELS" == *"release:patch"* ]] || \
-             [[ "$LABELS" == *"release:workflow"* ]]; then
-            echo "Valid release label detected"
+             [[ "$LABELS" == *"release:patch"* ]]; then
+            echo "✅ Valid release label detected"
           else
             echo "❌ PR must include one of the following labels:"
-            echo "release:major, release:minor, release:patch, release:workflow"
+            echo "  release:major, release:minor, release:patch"
             exit 1
           fi
