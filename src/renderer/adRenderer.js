@@ -14,12 +14,6 @@ function getExplicitSize(slot) {
 }
 
 export function renderAd(slot, cfg) {
-  if (slot.dataset.simulatorRendered === "true") {
-    return;
-  }
-
-  slot.dataset.simulatorRendered = "true";
-
   const config = parseAdConfig(slot, cfg);
   const explicit = getExplicitSize(slot);
 
