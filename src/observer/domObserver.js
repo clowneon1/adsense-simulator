@@ -1,5 +1,6 @@
 import { scanSlots } from "../runtime/slotScanner.js";
 
+let observerInstance = null;
 let observerStarted = false;
 let scheduled = false;
 
@@ -21,7 +22,7 @@ export function startDomObserver() {
     if (observerStarted) return;
     observerStarted = true;
 
-    const observer = new MutationObserver((mutations) => {
+    observerInstance = new MutationObserver((mutations) => {
       let adDetected = false;
 
       for (const mutation of mutations) {
@@ -62,7 +63,7 @@ export function startDomObserver() {
       scheduleScan();
     });
 
-    observer.observe(document.body, {
+    observerInstance.observe(document.body, {
       childList: true,
       subtree: true,
       attributes: true,
@@ -83,4 +84,13 @@ export function startDomObserver() {
   } else {
     window.addEventListener("DOMContentLoaded", start, { once: true });
   }
+}
+
+export function teardownDomObserver() {
+  if (observerInstance) {
+    observerInstance.disconnect();
+    observerInstance = null;
+  }
+  observerStarted = false;
+  scheduled = false;
 }

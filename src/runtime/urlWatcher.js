@@ -1,34 +1,22 @@
 import { scanSlots } from "./slotScanner.js";
+import { teardownDomObserver, startDomObserver } from "../observer/domObserver.js";
+import { resetQueue, initQueue } from "./queue.js";
 
 let currentUrl = location.href;
 let stopWatcher = null;
-let pendingTimers = [];
 
-function clearPendingTimers() {
-  for (const id of pendingTimers) {
-    clearTimeout(id);
-  }
-  pendingTimers = [];
-}
+function reinitRuntime() {
+  // Tear down all stateful singletons so they can re-initialise cleanly
+  teardownDomObserver();
+  resetQueue();
 
-function scheduleRouteRescan() {
-  // Immediate scan — catches slots already in DOM at navigation time
+  // Reset all slot render state and clear visual content
+  resetSlots();
+
+  // Re-init the full runtime — exactly what happens on a fresh page load
+  startDomObserver();
+  initQueue();
   scanSlots();
-
-  // Two rAF passes — catches slots added in the first paint after route change
-  requestAnimationFrame(() => {
-    scanSlots();
-
-    requestAnimationFrame(() => {
-      scanSlots();
-    });
-  });
-
-  // Timed passes — catches async-hydrated or lazily-inserted slots
-  // (common on home/root pages that restore cached DOM then patch in content)
-  pendingTimers.push(setTimeout(scanSlots, 100));
-  pendingTimers.push(setTimeout(scanSlots, 300));
-  pendingTimers.push(setTimeout(scanSlots, 600));
 }
 
 export function startUrlWatcher() {
@@ -41,11 +29,7 @@ export function startUrlWatcher() {
 
     currentUrl = next;
 
-    // Cancel any in-flight rescans from a previous navigation
-    clearPendingTimers();
-
-    resetSlots();
-    scheduleRouteRescan();
+    reinitRuntime();
   }
 
   const originalPushState = history.pushState.bind(history);
@@ -65,7 +49,6 @@ export function startUrlWatcher() {
   window.addEventListener("popstate", onUrlChange);
 
   stopWatcher = function () {
-    clearPendingTimers();
     history.pushState = originalPushState;
     history.replaceState = originalReplaceState;
     window.removeEventListener("popstate", onUrlChange);
@@ -79,12 +62,11 @@ export function stopUrlWatcher() {
 
 function resetSlots() {
   document.querySelectorAll(".adsbygoogle").forEach((slot) => {
-    // Clear render state so slots re-render after navigation
     delete slot.dataset.adsenseSimulated;
     delete slot.__adsense_seen_at__;
     delete slot.__adsense_retry_count__;
 
-    // Clear visual content so reused/preserved DOM nodes don't stay half-rendered
+    // Clear visual content so reused/preserved DOM nodes re-render cleanly
     slot.innerHTML = "";
     slot.style.cssText = "";
   });

@@ -2,6 +2,7 @@ import { scanSlots } from "./slotScanner.js";
 
 let queueInitialized = false;
 let draining = false;
+let originalPush = null;
 
 export function initQueue() {
   if (queueInitialized) return;
@@ -11,7 +12,7 @@ export function initQueue() {
 
   const queue = window.adsbygoogle;
 
-  const originalPush = queue.push.bind(queue);
+  originalPush = queue.push.bind(queue);
 
   queue.push = function (...args) {
     const result = originalPush(...args);
@@ -22,6 +23,16 @@ export function initQueue() {
   };
 
   scheduleDrain();
+}
+
+export function resetQueue() {
+  // Restore the original push so initQueue() can safely re-wrap it
+  if (window.adsbygoogle && originalPush) {
+    window.adsbygoogle.push = originalPush;
+  }
+  queueInitialized = false;
+  draining = false;
+  originalPush = null;
 }
 
 function scheduleDrain() {
