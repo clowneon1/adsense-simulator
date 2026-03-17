@@ -11,16 +11,41 @@ concurrency:
 
 jobs:
 
+  check-version:
+    name: Check Version Changed
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.check.outputs.changed }}
+      version: ${{ steps.check.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect version change
+        id: check
+        run: |
+          if git diff HEAD~1 -- package.json | grep -q '"version"'; then
+            VERSION=$(node -p "require('./package.json').version")
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "Version changed to $VERSION"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No version change detected, skipping release pipeline"
+          fi
+
   dry-run:
     name: Dry Run Publish
+    needs: check-version
+    if: needs.check-version.outputs.changed == 'true'
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org/
@@ -33,6 +58,13 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Verify dist
+        run: |
+          test -f dist/adsense-simulator.js
+          test -f dist/adsense-simulator.min.js
+          test -f dist/adsense-simulator.dev.js
+          echo "✅ dist files verified"
+
       - name: Preview publish
         run: npm publish --dry-run
         env:
@@ -40,7 +72,8 @@ jobs:
 
   publish:
     name: Approve → Publish to npm
-    needs: dry-run
+    needs: [check-version, dry-run]
+    if: needs.check-version.outputs.changed == 'true'
     runs-on: ubuntu-latest
 
     environment:
@@ -50,11 +83,9 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org/
@@ -62,23 +93,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build package
-        run: npm run build
+      - name: Verify dist
+        run: |
+          test -f dist/adsense-simulator.js
+          test -f dist/adsense-simulator.min.js
+          test -f dist/adsense-simulator.dev.js
+          echo "✅ dist files verified before publish"
 
       - name: Publish package
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Get package version
-        id: version
-        run: |
-          echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.version }}
+          tag_name: v${{ needs.check-version.outputs.version }}
           generate_release_notes: true
           body: |
             # @codepenguin/adsense-simulator
@@ -87,7 +117,7 @@ jobs:
 
             This allows developers to test ad placements, layouts, and click flows **without contacting Google servers**.
 
-            ⚠️ Intended for **development only**.  
+            ⚠️ Intended for **development only**.
             Do not use this simulator in production environments.
 
             ---
@@ -103,7 +133,7 @@ jobs:
             ## Usage
 
             ```javascript
-            import "@codepenguin/adsense-simulator"
+            import "@codepenguin/adsense-simulator";
             ```
 
             Once imported, the simulator automatically detects `.adsbygoogle` slots and renders simulated ads.
@@ -130,7 +160,13 @@ jobs:
             ## CDN Usage
 
             ```html
-            <script src="https://cdn.jsdelivr.net/npm/@codepenguin/adsense-simulator/dist/adsense-simulator.min.js?removeGoogleAds=true"></script>            ```
+            <script
+              src="https://cdn.jsdelivr.net/npm/@codepenguin/adsense-simulator/dist/adsense-simulator.min.js"
+              data-remove-google-ads="true">
+            </script>
+            ```
+
+            > ⚠️ Do **not** use `?removeGoogleAds=true` query params — CDNs (jsDelivr, unpkg) strip query strings before serving files. Use the `data-remove-google-ads="true"` attribute instead.
 
             ---
 
@@ -141,8 +177,12 @@ jobs:
             - responsive ad sizing
             - container-based rendering
             - dynamic DOM insertion detection
+            - SPA navigation support (pushState / replaceState)
+            - browser back/forward navigation (popstate)
+            - bfcache (Back-Forward Cache) restoration
             - click simulation
             - ad metadata inspection
+            - optional multi-layer blocking of real AdSense script
 
             ---
 

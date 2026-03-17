@@ -17,14 +17,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-
-      - name: Configure npm auth
-        run: npm config set //registry.npmjs.org/:_authToken=${NPM_TOKEN}
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          registry-url: https://registry.npmjs.org/
 
       - name: Verify npm authentication
         run: npm whoami
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Verify registry
         run: npm config get registry

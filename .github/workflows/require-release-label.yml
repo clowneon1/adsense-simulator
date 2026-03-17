@@ -17,9 +17,12 @@ jobs:
              [[ "$LABELS" == *"release:minor"* ]] || \
              [[ "$LABELS" == *"release:patch"* ]] || \
              [[ "$LABELS" == *"release:workflow"* ]]; then
-            echo "Valid release label detected"
+            echo "✅ Valid release label detected"
           else
             echo "❌ PR must include one of the following labels:"
-            echo "release:major, release:minor, release:patch, release:workflow"
+            echo "  release:major  — breaking changes or major new features"
+            echo "  release:minor  — new non-breaking features"
+            echo "  release:patch  — bug fixes"
+            echo "  release:workflow — CI/workflow-only changes, no version bump"
             exit 1
           fi
