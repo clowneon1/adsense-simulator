@@ -21,6 +21,7 @@ The simulator reproduces important behaviors of Google AdSense:
 - dynamic DOM insertion detection
 - SPA navigation support
 - back/forward navigation handling
+- bfcache (back-forward cache) support
 - click simulation
 - ad metadata inspection
 - optional blocking of the real AdSense script
@@ -148,12 +149,15 @@ This helps verify correct ad configuration.
 
 # Blocking Real AdSense Script
 
-During development you may want to prevent the real AdSense script from loading.
+During development you may want to prevent the real AdSense script from loading to avoid conflicts with the simulator.
 
-Use the script parameter:
+Use the `data-remove-google-ads` attribute on the script tag:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@codepenguin/adsense-simulator/dist/adsense-simulator.min.js?removeGoogleAds=true"></script>
+<script
+  src="https://cdn.jsdelivr.net/npm/@codepenguin/adsense-simulator/dist/adsense-simulator.min.js"
+  data-remove-google-ads="true"
+></script>
 ```
 
 When enabled, the simulator intercepts attempts to load:
@@ -164,7 +168,9 @@ https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js
 
 and prevents it from downloading.
 
-This avoids conflicts between the simulator and real AdSense.
+> ⚠️ **Note:** Query string parameters (e.g. `?removeGoogleAds=true`) do **not** work
+> when loading from jsDelivr or unpkg — CDNs strip query strings before serving files.
+> Always use the `data-remove-google-ads="true"` attribute instead.
 
 ---
 
@@ -220,9 +226,25 @@ Dynamic content and SPA navigation are handled via MutationObserver.
 
 ---
 
+# Known Limitations
+
+### Blocking real AdSense is best-effort
+
+The `data-remove-google-ads` blocker uses a `MutationObserver` to detect and remove AdSense script tags. Because `MutationObserver` fires asynchronously (after the current JS task), there is a small window where the browser may have already started fetching the script before removal.
+
+For guaranteed blocking in a dev environment, add a Content Security Policy to your dev server:
+
+```
+Content-Security-Policy: script-src 'self' 'unsafe-inline'
+```
+
+This prevents the AdSense script from loading at the network level regardless of how it is injected.
+
+---
+
 # What This Simulator Does NOT Replicate
 
-This tool does not simulate Google’s ad network infrastructure.
+This tool does not simulate Google's ad network infrastructure.
 
 It does **not provide**:
 

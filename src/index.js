@@ -16,13 +16,33 @@ function getScriptParams() {
 
   if (!script) return {};
 
-  const url = new URL(script.src);
-
   const params = {};
 
-  url.searchParams.forEach((value, key) => {
-    params[key] = value;
-  });
+  // Read query string params first (works for local/non-CDN usage)
+  try {
+    const url = new URL(script.src);
+    url.searchParams.forEach((value, key) => {
+      params[key] = value;
+    });
+  } catch (_) {
+    // src may be empty or relative in some environments — safe to ignore
+  }
+
+  // Read data-* attributes and merge over query params.
+  // CDNs (jsDelivr, unpkg) strip query strings before serving files,
+  // so data attributes are the only reliable config channel for CDN users.
+  // Data attributes take precedence over query string on conflict.
+  //
+  // Mapping: data-remove-google-ads="true" → params.removeGoogleAds = "true"
+  for (const attr of script.attributes) {
+    if (attr.name.startsWith("data-")) {
+      // Convert data-foo-bar-baz → fooBarbaz (camelCase)
+      const key = attr.name
+        .slice(5) // strip "data-"
+        .replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+      params[key] = attr.value;
+    }
+  }
 
   return params;
 }
