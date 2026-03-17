@@ -14,21 +14,26 @@ function escapeHtml(str) {
 function getExplicitSize(slot) {
   const width = parseInt(slot.style.width);
   const height = parseInt(slot.style.height);
-
   if (!isNaN(width) && !isNaN(height)) {
     return { width, height };
   }
-
   return null;
 }
 
 export function renderAd(slot, cfg) {
-  // Single consolidated render guard — replaces the old dual-flag pattern
   if (slot.dataset.adsenseSimulated === "true") {
     return;
   }
 
   slot.dataset.adsenseSimulated = "true";
+
+  // Preserve the original inline style before we overwrite it.
+  // resetSlots() restores this so re-renders after navigation use
+  // the correct original dimensions instead of falling back to
+  // containerWidth-based responsive sizing.
+  if (!slot.__adsense_original_style__) {
+    slot.__adsense_original_style__ = slot.getAttribute("style") || "";
+  }
 
   const config = parseAdConfig(slot, cfg);
   const explicit = getExplicitSize(slot);
@@ -40,12 +45,9 @@ export function renderAd(slot, cfg) {
     width = explicit.width;
     height = explicit.height;
   } else {
-    // Guard against detached slots (parentElement can be null)
     const parent = slot.parentElement;
     const containerWidth = parent ? parent.offsetWidth : 300;
-
     const size = chooseAdSize(containerWidth, config);
-
     width = size.width;
     height = size.height;
   }
@@ -57,11 +59,9 @@ export function renderAd(slot, cfg) {
   slot.style.color = "#e2e8f0";
   slot.style.border = "1px dashed #999";
   slot.style.fontFamily = "monospace";
-
   slot.style.width = width + "px";
   slot.style.height = height + "px";
 
-  // Escape all config values to prevent XSS via innerHTML injection
   const safeClient = escapeHtml(config.client);
   const safeSlot = escapeHtml(config.slot);
   const safeFormat = escapeHtml(config.format);
@@ -69,20 +69,15 @@ export function renderAd(slot, cfg) {
 
   slot.innerHTML = `
     <div style="padding:10px;width:100%">
-    
       <div style="font-size:11px;color:#94a3b8">
         adsense-simulator
       </div>
-
       <div style="margin-top:6px;font-size:12px">
-
         <div><b>client:</b> ${safeClient}</div>
         <div><b>slot:</b> ${safeSlot}</div>
         <div><b>size:</b> ${safeSize}</div>
         <div><b>format:</b> ${safeFormat}</div>
-
       </div>
-
     </div>
   `;
 
@@ -99,7 +94,6 @@ export function renderAd(slot, cfg) {
     const html = renderAdClick(adData);
     const blob = new Blob([html], { type: "text/html" });
     const url = URL.createObjectURL(blob);
-
     window.open(url, "_blank");
   };
 }

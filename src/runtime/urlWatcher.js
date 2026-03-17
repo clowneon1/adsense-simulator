@@ -11,6 +11,24 @@ function clearPendingTimers() {
   pendingTimers = [];
 }
 
+function resetSlots() {
+  document.querySelectorAll(".adsbygoogle").forEach((slot) => {
+    // Restore original inline style so re-renders use correct dimensions.
+    // adRenderer stores the original style before overwriting it.
+    if (slot.__adsense_original_style__ !== undefined) {
+      slot.setAttribute("style", slot.__adsense_original_style__);
+      delete slot.__adsense_original_style__;
+    }
+
+    delete slot.dataset.adsenseSimulated;
+    delete slot.__adsense_seen_at__;
+    delete slot.__adsense_retry_count__;
+
+    // Clear rendered content so the slot visually resets
+    slot.innerHTML = "";
+  });
+}
+
 function teardown() {
   teardownDomObserver();
   resetQueue();
@@ -18,8 +36,8 @@ function teardown() {
 }
 
 function reinitImmediate() {
-  // pushState/replaceState: framework mounts content synchronously right
-  // after navigation — full immediate reinit is safe.
+  // pushState/replaceState: app controls navigation, framework mounts
+  // content synchronously right after — full immediate reinit is safe.
   clearPendingTimers();
   teardown();
   startDomObserver();
@@ -28,31 +46,46 @@ function reinitImmediate() {
 }
 
 function reinitDeferred() {
-  // popstate (browser back/forward): fires BEFORE framework restores DOM.
-  // We must:
+  // popstate / bfcache restore: browser fires event BEFORE framework
+  // has restored the page DOM. Strategy:
   //   1. Teardown immediately — reset all singleton guards
-  //   2. startDomObserver immediately — ready to catch mutations during restore
-  //   3. initQueue immediately — CRITICAL: new ad scripts call
-  //      window.adsbygoogle.push() during DOM restore, before any rAF fires.
-  //      If the push hook isn't live yet those calls are silently lost.
-  //   4. Defer scanSlots — slots aren't in DOM yet, scan after framework mounts
+  //   2. startDomObserver immediately — watching documentElement so
+  //      it survives any body replacement the framework does
+  //   3. initQueue immediately — push() hook must be live before
+  //      any ad scripts fire during DOM restoration
+  //   4. Defer scanSlots — slots not in DOM yet, scan after framework mounts
   clearPendingTimers();
   teardown();
-  startDomObserver();
-  initQueue(); // must be synchronous — push() hook must be live immediately
+  startDomObserver(); // observes documentElement — survives body replacement
+  initQueue();        // push hook live immediately — never miss a .push() call
 
-  // Deferred scans — cover async DOM restoration windows
+  // Deferred scans: safety net for slots not triggered via queue drain
   requestAnimationFrame(() => {
     scanSlots();
-
     requestAnimationFrame(() => {
       scanSlots();
     });
   });
-
   pendingTimers.push(setTimeout(scanSlots, 100));
   pendingTimers.push(setTimeout(scanSlots, 300));
   pendingTimers.push(setTimeout(scanSlots, 600));
+}
+
+function onPopState() {
+  const next = location.href;
+  if (next === currentUrl) return;
+  currentUrl = next;
+  reinitDeferred();
+}
+
+function onPageShow(event) {
+  // bfcache restore: browser restores frozen page state.
+  // popstate may NOT fire in this case — pageshow with persisted=true
+  // is the only reliable signal for back-forward cache restoration.
+  if (event.persisted) {
+    currentUrl = location.href;
+    reinitDeferred();
+  }
 }
 
 export function startUrlWatcher() {
@@ -77,34 +110,19 @@ export function startUrlWatcher() {
     reinitImmediate();
   };
 
-  function onPopState() {
-    const next = location.href;
-    if (next === currentUrl) return;
-    currentUrl = next;
-    reinitDeferred();
-  }
-
   window.addEventListener("popstate", onPopState);
+  window.addEventListener("pageshow", onPageShow);
 
   stopWatcher = function () {
     clearPendingTimers();
     history.pushState = originalPushState;
     history.replaceState = originalReplaceState;
     window.removeEventListener("popstate", onPopState);
+    window.removeEventListener("pageshow", onPageShow);
     stopWatcher = null;
   };
 }
 
 export function stopUrlWatcher() {
-  if (stopWatcher) stopWatcher();
-}
-
-function resetSlots() {
-  document.querySelectorAll(".adsbygoogle").forEach((slot) => {
-    delete slot.dataset.adsenseSimulated;
-    delete slot.__adsense_seen_at__;
-    delete slot.__adsense_retry_count__;
-    slot.innerHTML = "";
-    slot.style.cssText = "";
-  });
+  if (stopWatcher) stopUrlWatcher();
 }

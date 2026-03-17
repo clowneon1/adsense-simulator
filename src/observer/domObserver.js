@@ -6,9 +6,7 @@ let scheduled = false;
 
 function scheduleScan() {
   if (scheduled) return;
-
   scheduled = true;
-
   requestAnimationFrame(() => {
     scheduled = false;
     scanSlots();
@@ -26,9 +24,9 @@ export function startDomObserver() {
       let adDetected = false;
 
       for (const mutation of mutations) {
-        // Watch for attribute changes on existing .adsbygoogle nodes.
-        // Frameworks often insert the element first, then set data-ad-client
-        // and data-ad-slot later during hydration — this catches that pattern.
+        // Attribute changes on existing .adsbygoogle nodes —
+        // frameworks insert the shell element first, then set
+        // data-ad-client/data-ad-slot during hydration.
         if (mutation.type === "attributes") {
           if (
             mutation.target instanceof HTMLElement &&
@@ -45,7 +43,6 @@ export function startDomObserver() {
 
         for (const node of mutation.addedNodes) {
           if (!(node instanceof HTMLElement)) continue;
-
           if (
             node.classList?.contains("adsbygoogle") ||
             node.querySelector?.(".adsbygoogle")
@@ -59,11 +56,16 @@ export function startDomObserver() {
       }
 
       if (!adDetected) return;
-
       scheduleScan();
     });
 
-    observerInstance.observe(document.body, {
+    // Observe documentElement (<html>), NOT document.body.
+    // Some SPA frameworks (Next.js App Router, Nuxt, etc.) replace
+    // document.body entirely on route changes. Observing a replaced body
+    // leaves the MutationObserver watching a detached stale node, making
+    // it blind to all new slot insertions. documentElement is NEVER
+    // replaced by any framework and survives all DOM mutations.
+    observerInstance.observe(document.documentElement, {
       childList: true,
       subtree: true,
       attributes: true,
@@ -79,7 +81,9 @@ export function startDomObserver() {
     });
   };
 
-  if (document.body) {
+  // documentElement is always available, but keep the DOMContentLoaded
+  // fallback for edge cases where the script runs extremely early.
+  if (document.documentElement) {
     start();
   } else {
     window.addEventListener("DOMContentLoaded", start, { once: true });
