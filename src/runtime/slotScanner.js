@@ -3,6 +3,7 @@ import { renderAd } from "../renderer/adRenderer.js";
 import { logError } from "../utils/errors.js";
 
 const BROKEN_SLOT_TIMEOUT = 2000;
+const MAX_RETRIES = 5;
 
 export function scanSlots() {
   const slots = document.querySelectorAll(".adsbygoogle");
@@ -18,12 +19,14 @@ export function scanSlots() {
 
       if (!slot.__adsense_seen_at__) {
         slot.__adsense_seen_at__ = Date.now();
+        slot.__adsense_retry_count__ = 0;
       }
 
       if (!client || !slotId) {
         const elapsed = Date.now() - slot.__adsense_seen_at__;
+        const retries = slot.__adsense_retry_count__ || 0;
 
-        if (elapsed > BROKEN_SLOT_TIMEOUT) {
+        if (elapsed > BROKEN_SLOT_TIMEOUT || retries >= MAX_RETRIES) {
           let message = "adsense-simulator: ";
 
           if (!client && !slotId) {
@@ -36,8 +39,10 @@ export function scanSlots() {
 
           logError(new Error(message));
 
+          // Mark as simulated so we stop retrying this broken slot
           slot.dataset.adsenseSimulated = "true";
         } else {
+          slot.__adsense_retry_count__ = retries + 1;
           retryNeeded = true;
         }
 
@@ -47,14 +52,11 @@ export function scanSlots() {
       const config = validateAdConfig(slot);
 
       renderAd(slot, config);
-
-      slot.dataset.adsenseSimulated = "true";
     } catch (err) {
       logError(err);
     }
   }
 
-  // schedule retry only if needed
   if (retryNeeded) {
     setTimeout(scanSlots, 500);
   }
