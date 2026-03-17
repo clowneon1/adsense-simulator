@@ -3,7 +3,7 @@ import { scanSlots } from "./runtime/slotScanner.js";
 import { startDomObserver } from "./observer/domObserver.js";
 import { startUrlWatcher } from "./runtime/urlWatcher.js";
 import { logSimulatorStart } from "./utils/logger.js";
-import { blockGoogleAdsScripts } from "./utils/blockGoogleAdsScripts.js";
+import { blockGoogleAdsScripts, installQueueTrap } from "./utils/blockGoogleAdsScripts.js";
 
 function startRuntime() {
   startDomObserver();
@@ -50,22 +50,21 @@ export function init() {
   const params = getScriptParams();
   logSimulatorStart(params);
 
-  // Layer 4 must be installed BEFORE initQueue() creates the array,
-  // so the trap wraps the queue from the very first moment it exists.
-  // Pass the queue reference after initQueue() sets it up.
   const shouldBlock = params.removeGoogleAds === "true";
 
   if (shouldBlock) {
-    // Layers 1 + 3 can start immediately before the queue exists
+    // Layers 1 + 3: intercept createElement and start MutationObserver blocker.
+    // These run before initQueue() so any AdSense scripts injected during
+    // queue init are already caught.
     blockGoogleAdsScripts();
   }
 
+  // Set up window.adsbygoogle queue
   initQueue();
 
   if (shouldBlock) {
     // Layer 4: now that initQueue() has created window.adsbygoogle,
-    // install the property trap around it
-    const { installQueueTrap } = await import("./utils/blockGoogleAdsScripts.js");
+    // install the property trap around it so real AdSense cannot replace it.
     installQueueTrap(window.adsbygoogle);
   }
 
