@@ -18,8 +18,9 @@ function teardown() {
 }
 
 function reinitImmediate() {
-  // Used for pushState/replaceState: framework mounts content synchronously
-  // right after navigation so an immediate full reinit is safe.
+  // pushState/replaceState: framework mounts content synchronously right
+  // after navigation — full immediate reinit is safe.
+  clearPendingTimers();
   teardown();
   startDomObserver();
   initQueue();
@@ -27,19 +28,21 @@ function reinitImmediate() {
 }
 
 function reinitDeferred() {
-  // Used for popstate (browser back/forward): popstate fires BEFORE the
-  // framework has restored the page DOM. Teardown and observer start
-  // immediately so we are ready to catch mutations, but the actual scan
-  // and queue init are deferred to give the framework time to mount slots.
+  // popstate (browser back/forward): fires BEFORE framework restores DOM.
+  // We must:
+  //   1. Teardown immediately — reset all singleton guards
+  //   2. startDomObserver immediately — ready to catch mutations during restore
+  //   3. initQueue immediately — CRITICAL: new ad scripts call
+  //      window.adsbygoogle.push() during DOM restore, before any rAF fires.
+  //      If the push hook isn't live yet those calls are silently lost.
+  //   4. Defer scanSlots — slots aren't in DOM yet, scan after framework mounts
   clearPendingTimers();
   teardown();
-
-  // Observer up immediately — catches any slot inserted during restoration
   startDomObserver();
+  initQueue(); // must be synchronous — push() hook must be live immediately
 
-  // Deferred scans across multiple windows to catch async DOM restoration
+  // Deferred scans — cover async DOM restoration windows
   requestAnimationFrame(() => {
-    initQueue();
     scanSlots();
 
     requestAnimationFrame(() => {
@@ -63,7 +66,6 @@ export function startUrlWatcher() {
     const next = location.href;
     if (next === currentUrl) return;
     currentUrl = next;
-    clearPendingTimers();
     reinitImmediate();
   };
 
@@ -72,23 +74,23 @@ export function startUrlWatcher() {
     const next = location.href;
     if (next === currentUrl) return;
     currentUrl = next;
-    clearPendingTimers();
     reinitImmediate();
   };
 
-  // popstate = browser back/forward: DOM restoration is async, use deferred path
-  window.addEventListener("popstate", () => {
+  function onPopState() {
     const next = location.href;
     if (next === currentUrl) return;
     currentUrl = next;
     reinitDeferred();
-  });
+  }
+
+  window.addEventListener("popstate", onPopState);
 
   stopWatcher = function () {
     clearPendingTimers();
     history.pushState = originalPushState;
     history.replaceState = originalReplaceState;
-    window.removeEventListener("popstate", reinitDeferred);
+    window.removeEventListener("popstate", onPopState);
     stopWatcher = null;
   };
 }
