@@ -4,54 +4,91 @@ import { resetQueue, initQueue } from "./queue.js";
 
 let currentUrl = location.href;
 let stopWatcher = null;
+let pendingTimers = [];
 
-function reinitRuntime() {
-  // Tear down all stateful singletons so they can re-initialise cleanly
+function clearPendingTimers() {
+  for (const id of pendingTimers) clearTimeout(id);
+  pendingTimers = [];
+}
+
+function teardown() {
   teardownDomObserver();
   resetQueue();
-
-  // Reset all slot render state and clear visual content
   resetSlots();
+}
 
-  // Re-init the full runtime — exactly what happens on a fresh page load
+function reinitImmediate() {
+  // Used for pushState/replaceState: framework mounts content synchronously
+  // right after navigation so an immediate full reinit is safe.
+  teardown();
   startDomObserver();
   initQueue();
   scanSlots();
 }
 
+function reinitDeferred() {
+  // Used for popstate (browser back/forward): popstate fires BEFORE the
+  // framework has restored the page DOM. Teardown and observer start
+  // immediately so we are ready to catch mutations, but the actual scan
+  // and queue init are deferred to give the framework time to mount slots.
+  clearPendingTimers();
+  teardown();
+
+  // Observer up immediately — catches any slot inserted during restoration
+  startDomObserver();
+
+  // Deferred scans across multiple windows to catch async DOM restoration
+  requestAnimationFrame(() => {
+    initQueue();
+    scanSlots();
+
+    requestAnimationFrame(() => {
+      scanSlots();
+    });
+  });
+
+  pendingTimers.push(setTimeout(scanSlots, 100));
+  pendingTimers.push(setTimeout(scanSlots, 300));
+  pendingTimers.push(setTimeout(scanSlots, 600));
+}
+
 export function startUrlWatcher() {
   if (stopWatcher) return;
-
-  function onUrlChange() {
-    const next = location.href;
-
-    if (next === currentUrl) return;
-
-    currentUrl = next;
-
-    reinitRuntime();
-  }
 
   const originalPushState = history.pushState.bind(history);
   const originalReplaceState = history.replaceState.bind(history);
 
   history.pushState = function (...args) {
     originalPushState(...args);
-    onUrlChange();
+    const next = location.href;
+    if (next === currentUrl) return;
+    currentUrl = next;
+    clearPendingTimers();
+    reinitImmediate();
   };
 
   history.replaceState = function (...args) {
     originalReplaceState(...args);
-    onUrlChange();
+    const next = location.href;
+    if (next === currentUrl) return;
+    currentUrl = next;
+    clearPendingTimers();
+    reinitImmediate();
   };
 
-  // Handle back/forward browser navigation
-  window.addEventListener("popstate", onUrlChange);
+  // popstate = browser back/forward: DOM restoration is async, use deferred path
+  window.addEventListener("popstate", () => {
+    const next = location.href;
+    if (next === currentUrl) return;
+    currentUrl = next;
+    reinitDeferred();
+  });
 
   stopWatcher = function () {
+    clearPendingTimers();
     history.pushState = originalPushState;
     history.replaceState = originalReplaceState;
-    window.removeEventListener("popstate", onUrlChange);
+    window.removeEventListener("popstate", reinitDeferred);
     stopWatcher = null;
   };
 }
@@ -65,8 +102,6 @@ function resetSlots() {
     delete slot.dataset.adsenseSimulated;
     delete slot.__adsense_seen_at__;
     delete slot.__adsense_retry_count__;
-
-    // Clear visual content so reused/preserved DOM nodes re-render cleanly
     slot.innerHTML = "";
     slot.style.cssText = "";
   });
