@@ -3,6 +3,17 @@ import { scanSlots } from "../runtime/slotScanner.js";
 let observerStarted = false;
 let scheduled = false;
 
+function scheduleScan() {
+  if (scheduled) return;
+
+  scheduled = true;
+
+  requestAnimationFrame(() => {
+    scheduled = false;
+    scanSlots();
+  });
+}
+
 export function startDomObserver() {
   if (observerStarted) return;
 
@@ -14,6 +25,21 @@ export function startDomObserver() {
       let adDetected = false;
 
       for (const mutation of mutations) {
+        // Watch for attribute changes on existing .adsbygoogle nodes.
+        // Frameworks often insert the element first, then set data-ad-client
+        // and data-ad-slot later during hydration — this catches that pattern.
+        if (mutation.type === "attributes") {
+          if (
+            mutation.target instanceof HTMLElement &&
+            mutation.target.classList.contains("adsbygoogle") &&
+            mutation.target.dataset.adsenseSimulated !== "true"
+          ) {
+            adDetected = true;
+            break;
+          }
+          continue;
+        }
+
         if (mutation.type !== "childList") continue;
 
         for (const node of mutation.addedNodes) {
@@ -33,19 +59,22 @@ export function startDomObserver() {
 
       if (!adDetected) return;
 
-      if (!scheduled) {
-        scheduled = true;
-
-        requestAnimationFrame(() => {
-          scheduled = false;
-          scanSlots();
-        });
-      }
+      scheduleScan();
     });
 
     observer.observe(document.body, {
       childList: true,
       subtree: true,
+      attributes: true,
+      attributeFilter: [
+        "class",
+        "data-ad-client",
+        "data-ad-slot",
+        "data-ad-format",
+        "data-ad-layout",
+        "data-full-width-responsive",
+        "style",
+      ],
     });
   };
 
